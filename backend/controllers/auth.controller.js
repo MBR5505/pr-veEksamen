@@ -59,17 +59,53 @@ const authController = {
 
   user: async (req, res) => {
     try {
-      const user = await User.findOne({ _id: req.params.id })
-        .populate('flokker');
+      // If you want to view a specific user (could be yourself or another user)
+      const requestedUserId = req.params.id;
       
-      if (user) {
-        res.status(200).send({ msg: "Loading Profile...", user });
-      } else {
-        res.status(404).send({ msg: "User not found" });
+      // Check authorization (if viewing other users)
+      if (requestedUserId !== req.user.id) {
+        // Check if user has permission to view other users
+        const currentUser = await User.findById(req.user.id).select('role');
+        if (!currentUser || currentUser.role !== 'admin') {
+          return res.status(403).send({ success: false, message: "Forbidden" });
+        }
       }
+      
+      // Fetch the requested user
+      const user = await User.findById(requestedUserId)
+        .select('name email profileImage bio createdAt lastActive role');
+      
+      if (!user) {
+        return res.status(404).send({ success: false, message: "User not found" });
+      }
+      
+      // If you need the user's flokker data, fetch it separately
+      const flokker = await Flokk.find({ eier_id: requestedUserId })
+        .select('name description status createdAt')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean();
+      
+      // Combine the data for response
+      res.status(200).send({
+        success: true,
+        data: {
+          user: user.toObject(), // Convert to plain object
+          flokker
+        }
+      });
     } catch (error) {
-      console.error(error);
-      res.status(500).send({ msg: "Server error" });
+      console.error(`Error fetching user: ${error.message}`);
+      
+      if (error.name === 'CastError') {
+        return res.status(400).send({ success: false, message: "Invalid user ID format" });
+      }
+      
+      res.status(500).send({
+        success: false,
+        message: "Failed to retrieve user profile",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   },
 

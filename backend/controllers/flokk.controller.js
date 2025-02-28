@@ -4,19 +4,52 @@ import { customAlphabet } from "nanoid";
 const flokkController = {
   getAllFlokk: async (req, res) => {
     try {
-      if (!req.user || !req.user.id) {
-        return res.status(401).send({ msg: "User not authenticated" });
+      if (!req.user?.id) {
+        return res.status(401).send({ success: false, message: "Unauthorized" });
       }
       
-      const flokker = await Flokk.find({ eier_id: req.user.id }).populate("eier_id");
-      if (flokker.length > 0) {
-        res.status(200).send({ msg: "Flokker retrieved", flokker });
-      } else {
-        res.status(404).send({ msg: "No flokker found" });
-      }
+      // Extract query parameters with defaults
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const sort = req.query.sort || '-createdAt'; // Default sort by newest
+      const skip = (page - 1) * limit;
+      
+      // Build query based on filters (can be expanded)
+      const query = { eier_id: req.user.id };
+      if (req.query.status) query.status = req.query.status;
+      
+      // Count total matches for pagination info
+      const total = await Flokk.countDocuments(query);
+      
+      // Fetch data with selective population
+      const flokker = await Flokk.find(query)
+        .populate('eier_id', 'name email profileImage') // Only populate needed fields
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(); // Use lean() for better performance
+      
+      // Always return 200 with pagination metadata
+      res.status(200).send({
+        success: true,
+        message: flokker.length ? "Flokker retrieved" : "No flokker found",
+        data: {
+          flokker,
+          pagination: {
+            total,
+            page,
+            pages: Math.ceil(total / limit),
+            limit
+          }
+        }
+      });
     } catch (error) {
-      console.error(error);
-      res.status(500).send({ msg: "Server error" });
+      console.error(`Error fetching flokker: ${error.message}`);
+      res.status(500).send({ 
+        success: false, 
+        message: "Failed to retrieve flokker",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   },
   

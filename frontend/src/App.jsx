@@ -6,12 +6,13 @@ import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Profile from './pages/Profile.jsx';
 import CreateFlokk from './pages/CreateFlokk.jsx';
+import { AuthProvider } from './auth/Auth.jsx';
+
 
 
 function App() {
-  // ...
   return (
-    <BrowserRouter>
+    
       <div className='wrapper'>
         <Routes>
           <Route path="/" element={<BeiteKart />} />
@@ -23,7 +24,7 @@ function App() {
           <Route path="*" element={<NotFound/>} />
         </Routes>
       </div>
-    </BrowserRouter>
+   
   );
 }
 

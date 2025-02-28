@@ -17,7 +17,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchFlokker = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/flokk", {
+        const response = await axios.get("http://localhost:4000/api/flokk/", {
           withCredentials: true,
         });
         setFlokker(response.data.flokker);

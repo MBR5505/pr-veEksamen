@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import axios from "axios";
-import { AuthContext } from "../auth/Auth.jsx";
+import { useAuth } from "../auth/Auth.jsx";
 import { Navigate } from "react-router-dom";
 
 export default function Login() {
@@ -8,7 +8,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading } = useContext(useAuth());
 
   if (loading) {
     return <div className="min-h-screen bg-gray-800 flex items-center justify-center text-white">Loading authentication status...</div>;

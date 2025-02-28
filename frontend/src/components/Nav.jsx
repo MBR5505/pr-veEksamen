@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { fetchUser } from '../auth/Auth.jsx';
-import axios from 'axios';
+// src/components/Nav.jsx
+import React, { useState } from 'react';
+import { useAuth } from '../auth/Auth.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const Nav = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    fetchUser().then((userData) => setUser(userData));
-  }, []);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleProfileMenu = () => {
     setShowProfileMenu(!showProfileMenu);
@@ -16,9 +14,10 @@ const Nav = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:4000/api/auth/logout', {}, { withCredentials: true });
-      localStorage.removeItem('userId');
-      window.location.replace('/login');
+      const result = await logout();
+      if (result.success) {
+        navigate('/login');
+      }
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -54,7 +53,7 @@ const Nav = () => {
               
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-10">
-                  <a href={`/${user._id}`} className="block px-4 py-2 hover:bg-gray-700">Profile</a>
+                  <a href={`/profile/${user._id}`} className="block px-4 py-2 hover:bg-gray-700">Profile</a>
                   <button 
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 hover:bg-gray-700"
